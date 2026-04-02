@@ -1,0 +1,16 @@
+{
+  "name": "kupi",
+  "private": true,
+  "pnpm": {
+    "onlyBuiltDependencies": ["esbuild", "@prisma/engines", "@prisma/client", "prisma"]
+  },
+  "scripts": {
+    "dev": "pnpm -r --parallel dev",
+    "dev:backend": "pnpm --filter @kupi/backend dev",
+    "dev:frontend": "pnpm --filter @kupi/frontend dev",
+    "db:generate": "pnpm --filter @kupi/db db:generate",
+    "db:migrate": "pnpm --filter @kupi/db db:migrate",
+    "db:push": "pnpm --filter @kupi/db db:push",
+    "db:studio": "pnpm --filter @kupi/db db:studio"
+  }
+}
