@@ -1,24 +1,39 @@
 # Kupi
 
-A full-stack TypeScript monorepo built with React, Express, and Prisma.
+A full-stack TypeScript monorepo built with Next.js, Express, tRPC, and Prisma.
 
 ## Tech Stack
 
-| Layer    | Package           | Technology                     |
-| -------- | ----------------- | ------------------------------ |
-| Frontend | `@kupi/frontend`  | React 19, Vite 6, TypeScript   |
-| Backend  | `@kupi/backend`   | Express 4, TypeScript           |
-| Database | `@kupi/db`        | Prisma 7, PostgreSQL            |
-| Infra    | root              | Docker Compose, pnpm workspaces |
+| Layer    | Package           | Technology                                        |
+| -------- | ----------------- | ------------------------------------------------- |
+| Frontend | `@kupi/frontend`  | Next.js 15, React 19, Tailwind CSS 4, TypeScript  |
+| Backend  | `@kupi/backend`   | Express 4, tRPC v11, Zod, TypeScript              |
+| Database | `@kupi/db`        | Prisma 7, PostgreSQL                              |
+| Infra    | root              | Docker Compose, pnpm workspaces                   |
+
+## Architecture
+
+```
+Next.js (port 3000) ──tRPC client──▶ Express + tRPC (port 3001) ──Prisma──▶ PostgreSQL (port 5432)
+```
+
+The frontend communicates with the backend via tRPC, providing end-to-end type safety from database to UI with zero code generation on the client.
 
 ## Project Structure
 
 ```
 kupi/
 ├── packages/
-│   ├── frontend/          # React SPA (port 3000)
-│   ├── backend/           # Express API server (port 3001)
-│   └── db/                # Prisma schema & database client
+│   ├── frontend/          # Next.js App Router (port 3000)
+│   │   └── src/
+│   │       ├── app/       # Pages and layouts
+│   │       └── trpc/      # tRPC client and providers
+│   ├── backend/           # Express + tRPC server (port 3001)
+│   │   └── src/
+│   │       ├── index.ts   # Express server entry
+│   │       └── trpc/      # tRPC router and procedures
+│   └── db/                # Prisma schema and database client
+├── docs/                  # Documentation
 ├── docker-compose.yml     # Local PostgreSQL 16
 ├── pnpm-workspace.yaml    # Workspace configuration
 └── package.json           # Root scripts
@@ -53,24 +68,45 @@ pnpm db:generate
 
 # Run database migrations
 pnpm db:migrate
+```
 
-# Start all services
+### Running Development Servers
+
+The recommended way is to run each service in its own terminal:
+
+**Terminal 1 — Backend:**
+```bash
+cd packages/backend
 pnpm dev
 ```
 
-The frontend will be available at `http://localhost:3000` and the backend API at `http://localhost:3001`.
+**Terminal 2 — Frontend:**
+```bash
+cd packages/frontend
+pnpm dev
+```
+
+The frontend will be at `http://localhost:3000` and the backend API at `http://localhost:3001`.
 
 ## Available Scripts
+
+Run from the project root:
 
 | Command              | Description                          |
 | -------------------- | ------------------------------------ |
 | `pnpm dev`           | Start all packages in parallel       |
-| `pnpm dev:frontend`  | Start frontend only                  |
-| `pnpm dev:backend`   | Start backend only                   |
+| `pnpm build`         | Build the frontend                   |
 | `pnpm db:generate`   | Generate Prisma client               |
 | `pnpm db:migrate`    | Run database migrations              |
 | `pnpm db:push`       | Push schema changes to database      |
 | `pnpm db:studio`     | Open Prisma Studio                   |
+
+Run from within each package:
+
+| Command                             | Description            |
+| ----------------------------------- | ---------------------- |
+| `cd packages/backend && pnpm dev`   | Start backend only     |
+| `cd packages/frontend && pnpm dev`  | Start frontend only    |
 
 ## Documentation
 
