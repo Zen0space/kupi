@@ -8,6 +8,7 @@
     "dev": "pnpm -r --parallel dev",
     "dev:backend": "pnpm --filter @kupi/backend dev",
     "dev:frontend": "pnpm --filter @kupi/frontend dev",
+    "build": "pnpm --filter @kupi/frontend build",
     "db:generate": "pnpm --filter @kupi/db db:generate",
     "db:migrate": "pnpm --filter @kupi/db db:migrate",
     "db:push": "pnpm --filter @kupi/db db:push",
