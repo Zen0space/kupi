@@ -57,8 +57,10 @@ cd kupi
 # Install dependencies
 pnpm install
 
-# Copy environment variables
-cp .env.example .env
+# Copy environment variables for each package
+cp packages/backend/.env.example packages/backend/.env
+cp packages/frontend/.env.example packages/frontend/.env
+cp packages/db/.env.example packages/db/.env
 
 # Start PostgreSQL
 docker compose up -d

@@ -41,20 +41,33 @@ This installs dependencies for all workspace packages (`frontend`, `backend`, `d
 
 ## 3. Environment Variables
 
-Copy the example environment file:
+Each package has its own `.env` file. Copy the examples:
 
 ```bash
-cp .env.example .env
+cp packages/backend/.env.example packages/backend/.env
+cp packages/frontend/.env.example packages/frontend/.env
+cp packages/db/.env.example packages/db/.env
 ```
 
-The default `.env` contains:
+### What each `.env` contains
 
+**`packages/backend/.env`** — used by the Express server at runtime:
 ```
 DATABASE_URL=postgres://kupi:kupi@localhost:5432/kupi
+PORT=3001
+```
+
+**`packages/frontend/.env`** — used by Next.js (`NEXT_PUBLIC_` vars are exposed to the browser):
+```
 NEXT_PUBLIC_BACKEND_URL=http://localhost:3001
 ```
 
-These match the Docker Compose and default backend configuration. No changes needed for local development.
+**`packages/db/.env`** — used by Prisma CLI for migrations and code generation:
+```
+DATABASE_URL=postgres://kupi:kupi@localhost:5432/kupi
+```
+
+The defaults match the Docker Compose configuration. No changes needed for local development.
 
 ## 4. Start PostgreSQL
 
@@ -195,11 +208,11 @@ Ensure PostgreSQL is running:
 docker compose ps
 ```
 
-Verify `DATABASE_URL` in your `.env` matches the Docker Compose credentials.
+Verify `DATABASE_URL` in `packages/backend/.env` and `packages/db/.env` matches the Docker Compose credentials.
 
 ### tRPC connection errors in the frontend
 
-Make sure the backend is running before the frontend tries to fetch data. Verify `NEXT_PUBLIC_BACKEND_URL` in your `.env` points to the correct backend URL (`http://localhost:3001`).
+Make sure the backend is running before the frontend tries to fetch data. Verify `NEXT_PUBLIC_BACKEND_URL` in `packages/frontend/.env` points to the correct backend URL (`http://localhost:3001`).
 
 ### Fresh start
 

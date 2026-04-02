@@ -6,7 +6,7 @@ import { appRouter } from "./trpc/routers/_app";
 import { createContext } from "./trpc/init";
 
 const app = express();
-const port = 3001;
+const port = Number(process.env.PORT) || 3001;
 const prisma = createPrismaClient();
 
 app.use(
