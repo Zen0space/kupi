@@ -1,0 +1,57 @@
+# Dependencies
+node_modules
+.pnpm-store
+
+# Build output
+dist
+build
+
+# Environment variables
+.env
+.env.local
+.env.*.local
+.env.example
+
+# Logs
+*.log
+npm-debug.log*
+pnpm-debug.log*
+
+# Prisma generated client
+packages/db/src/generated
+
+# Git
+.git
+.gitignore
+
+# Editor & IDE
+.vscode
+.idea
+*.swp
+*.swo
+*~
+
+# TypeScript
+*.tsbuildinfo
+
+# Vite
+packages/frontend/.vite
+
+# Testing
+coverage
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Docker
+docker-compose.yml
+pgdata
+
+# Documentation
+LICENSE
+README.md
+*.md
+
+# CI/CD
+.github
