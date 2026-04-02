@@ -51,9 +51,10 @@ The default `.env` contains:
 
 ```
 DATABASE_URL=postgres://kupi:kupi@localhost:5432/kupi
+NEXT_PUBLIC_BACKEND_URL=http://localhost:3001
 ```
 
-This matches the Docker Compose PostgreSQL configuration. No changes needed for local development.
+These match the Docker Compose and default backend configuration. No changes needed for local development.
 
 ## 4. Start PostgreSQL
 
@@ -113,30 +114,33 @@ pnpm db:push
 
 ## 6. Start Development Servers
 
-Start all services in parallel:
+The recommended approach is to run each service in its own terminal for clear, isolated logs:
 
+**Terminal 1 — Backend:**
 ```bash
+cd packages/backend
 pnpm dev
 ```
 
-Or start individual services:
-
+**Terminal 2 — Frontend:**
 ```bash
-# Frontend only (port 3000)
-pnpm dev:frontend
-
-# Backend only (port 3001)
-pnpm dev:backend
+cd packages/frontend
+pnpm dev
 ```
+
+This makes it easy to see logs from each service separately and restart one without affecting the other.
+
+> **Alternative:** You can also run both in parallel from the root with `pnpm dev`, but the logs will be interleaved.
 
 ### Service URLs
 
-| Service       | URL                          |
-| ------------- | ---------------------------- |
-| Frontend      | http://localhost:3000         |
-| Backend API   | http://localhost:3001         |
-| Health Check  | http://localhost:3001/health  |
-| Prisma Studio | Run `pnpm db:studio`         |
+| Service       | URL                               |
+| ------------- | --------------------------------- |
+| Frontend      | http://localhost:3000              |
+| Backend API   | http://localhost:3001              |
+| tRPC endpoint | http://localhost:3001/trpc         |
+| Health Check  | http://localhost:3001/health       |
+| Prisma Studio | Run `pnpm db:studio`              |
 
 ## 7. Prisma Studio
 
@@ -193,6 +197,10 @@ docker compose ps
 
 Verify `DATABASE_URL` in your `.env` matches the Docker Compose credentials.
 
+### tRPC connection errors in the frontend
+
+Make sure the backend is running before the frontend tries to fetch data. Verify `NEXT_PUBLIC_BACKEND_URL` in your `.env` points to the correct backend URL (`http://localhost:3001`).
+
 ### Fresh start
 
 To completely reset your local environment:
@@ -205,10 +213,22 @@ rm -rf node_modules packages/*/node_modules
 # Remove database volume
 docker compose down -v
 
+# Remove Next.js cache
+rm -rf packages/frontend/.next
+
 # Reinstall and set up
 pnpm install
 docker compose up -d
 pnpm db:generate
 pnpm db:migrate
-pnpm dev
+```
+
+Then start the dev servers in separate terminals:
+
+```bash
+# Terminal 1
+cd packages/backend && pnpm dev
+
+# Terminal 2
+cd packages/frontend && pnpm dev
 ```

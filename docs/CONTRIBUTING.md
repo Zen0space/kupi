@@ -31,6 +31,24 @@ git pull origin dev
 git checkout -b feat/your-feature-name
 ```
 
+## Development Workflow
+
+After running `pnpm install` and setting up the database (see [Setup Guide](SETUP.md)), start the dev servers in separate terminals:
+
+**Terminal 1 — Backend:**
+```bash
+cd packages/backend
+pnpm dev
+```
+
+**Terminal 2 — Frontend:**
+```bash
+cd packages/frontend
+pnpm dev
+```
+
+This gives you clear, isolated logs for each service and makes it easier to restart one without affecting the other.
+
 ## Commit Messages
 
 Follow the [Conventional Commits](https://www.conventionalcommits.org/) specification:
@@ -65,7 +83,7 @@ chore: upgrade Prisma to v7.7
 ## Pull Request Process
 
 1. Ensure your branch is up to date with `dev`
-2. Verify the app runs without errors (`pnpm dev`)
+2. Start both services and verify the app runs without errors
 3. Write a clear PR title using the commit message format
 4. Describe what changes you made and why in the PR body
 5. Link any related issues
@@ -76,8 +94,14 @@ chore: upgrade Prisma to v7.7
 ```
 kupi/
 ├── packages/
-│   ├── frontend/      # @kupi/frontend — React + Vite
-│   ├── backend/       # @kupi/backend  — Express API
+│   ├── frontend/      # @kupi/frontend — Next.js 15 + tRPC client
+│   │   └── src/
+│   │       ├── app/   # Pages, layouts, and route groups
+│   │       └── trpc/  # tRPC client, providers, query client
+│   ├── backend/       # @kupi/backend  — Express + tRPC server
+│   │   └── src/
+│   │       ├── index.ts
+│   │       └── trpc/  # Router, procedures, context
 │   └── db/            # @kupi/db       — Prisma + PostgreSQL
 ├── docs/              # Documentation
 └── docker-compose.yml # Local infrastructure
@@ -85,10 +109,35 @@ kupi/
 
 ### Where to make changes
 
-- **UI components and pages** — `packages/frontend/src/`
-- **API routes and middleware** — `packages/backend/src/`
+- **UI components and pages** — `packages/frontend/src/app/`
+- **tRPC client wiring** — `packages/frontend/src/trpc/`
+- **API procedures (tRPC)** — `packages/backend/src/trpc/routers/`
+- **tRPC context and middleware** — `packages/backend/src/trpc/init.ts`
+- **Express server and middleware** — `packages/backend/src/index.ts`
 - **Database schema and models** — `packages/db/prisma/schema.prisma`
 - **Shared database client** — `packages/db/src/`
+
+## Adding a tRPC Procedure
+
+1. Create or edit a router file in `packages/backend/src/trpc/routers/`
+2. Merge it into the root `appRouter` in `_app.ts`
+3. The frontend picks up the new type automatically — use `useTRPC()` to call it
+
+```ts
+// packages/backend/src/trpc/routers/_app.ts
+import { router, publicProcedure } from "../init";
+import { z } from "zod";
+
+export const appRouter = router({
+  // existing procedures...
+  myNewProcedure: publicProcedure
+    .input(z.object({ id: z.string() }))
+    .query(({ input, ctx }) => {
+      // ctx.prisma is available here
+      return { id: input.id };
+    }),
+});
+```
 
 ## Database Changes
 
@@ -103,20 +152,17 @@ Never edit generated files in `packages/db/src/generated/`.
 
 ## Adding Dependencies
 
-Use pnpm workspace filters to add dependencies to the correct package:
+Use pnpm workspace filters or `cd` into the package directly:
 
 ```bash
-# Add to frontend
+# Using filter from root
 pnpm --filter @kupi/frontend add <package>
-
-# Add to backend
 pnpm --filter @kupi/backend add <package>
-
-# Add to db
-pnpm --filter @kupi/db add <package>
-
-# Add dev dependency
 pnpm --filter @kupi/backend add -D <package>
+
+# Or cd into the package
+cd packages/frontend && pnpm add <package>
+cd packages/backend && pnpm add -D <package>
 ```
 
 Do not install dependencies at the root level unless they are shared tooling.
