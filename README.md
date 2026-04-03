@@ -88,7 +88,7 @@ cd packages/frontend
 pnpm dev
 ```
 
-The frontend will be at `http://localhost:3000` and the backend API at `http://localhost:3001`.
+The frontend will be at `http://localhost:3000` and the backend API at `http://localhost:4000`.
 
 ## Available Scripts
 
