@@ -4,14 +4,16 @@ import * as trpcExpress from "@trpc/server/adapters/express";
 import { createPrismaClient } from "@kupi/db";
 import { appRouter } from "./trpc/routers/_app";
 import { createContext } from "./trpc/init";
+import { requireEnv } from "./env";
 
 const app = express();
-const port = Number(process.env.PORT) || 3001;
+const port = Number(process.env.PORT) || 4000;
+const corsOrigin = requireEnv("CORS_ORIGIN");
 const prisma = createPrismaClient();
 
 app.use(
   cors({
-    origin: ["http://localhost:3000"],
+    origin: corsOrigin.split(",").map((o) => o.trim()),
     credentials: true,
   }),
 );
@@ -39,7 +41,7 @@ async function main() {
   }
 
   app.listen(port, () => {
-    console.log(`Backend running on http://localhost:${port}`);
+    console.log(`Backend running on port ${port}`);
   });
 }
 

@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { TRPCReactProvider } from "@/trpc/client";
+import { getToken } from "./actions/auth";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -15,7 +16,9 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body>
-        <TRPCReactProvider>{children}</TRPCReactProvider>
+        <TRPCReactProvider getToken={getToken}>
+          {children}
+        </TRPCReactProvider>
       </body>
     </html>
   );

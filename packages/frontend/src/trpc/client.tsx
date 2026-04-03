@@ -4,7 +4,7 @@ import type { QueryClient } from "@tanstack/react-query";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { createTRPCClient, httpBatchLink } from "@trpc/client";
 import { createTRPCContext } from "@trpc/tanstack-react-query";
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { makeQueryClient } from "./query-client";
 import type { AppRouter } from "@kupi/backend/src/trpc/routers/_app";
 
@@ -23,25 +23,45 @@ function getQueryClient() {
 }
 
 function getUrl() {
-  if (typeof window !== "undefined") {
-    return process.env.NEXT_PUBLIC_BACKEND_URL
-      ? `${process.env.NEXT_PUBLIC_BACKEND_URL}/trpc`
-      : "http://localhost:3001/trpc";
+  const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
+  if (!backendUrl) {
+    throw new Error("Missing required environment variable: NEXT_PUBLIC_BACKEND_URL");
   }
-  return "http://localhost:3001/trpc";
+  return `${backendUrl}/trpc`;
 }
 
 export function TRPCReactProvider({
   children,
+  getToken,
 }: Readonly<{
   children: React.ReactNode;
+  getToken: () => Promise<string | undefined>;
 }>) {
   const queryClient = getQueryClient();
+  const tokenRef = useRef<string | undefined>(undefined);
+
+  // Fetch the token via server action on mount
+  useEffect(() => {
+    getToken().then((token) => {
+      tokenRef.current = token;
+    });
+  }, [getToken]);
+
   const [trpcClient] = useState(() =>
     createTRPCClient<AppRouter>({
       links: [
         httpBatchLink({
           url: getUrl(),
+          async headers() {
+            // If we don't have a token yet, try fetching it
+            if (!tokenRef.current) {
+              tokenRef.current = await getToken();
+            }
+            if (tokenRef.current) {
+              return { Authorization: `Bearer ${tokenRef.current}` };
+            }
+            return {};
+          },
         }),
       ],
     }),

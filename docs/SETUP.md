@@ -54,12 +54,12 @@ cp packages/db/.env.example packages/db/.env
 **`packages/backend/.env`** — used by the Express server at runtime:
 ```
 DATABASE_URL=postgres://kupi:kupi@localhost:5432/kupi
-PORT=3001
+PORT=4000
 ```
 
 **`packages/frontend/.env`** — used by Next.js (`NEXT_PUBLIC_` vars are exposed to the browser):
 ```
-NEXT_PUBLIC_BACKEND_URL=http://localhost:3001
+NEXT_PUBLIC_BACKEND_URL=http://localhost:4000
 ```
 
 **`packages/db/.env`** — used by Prisma CLI for migrations and code generation:
@@ -150,9 +150,9 @@ This makes it easy to see logs from each service separately and restart one with
 | Service       | URL                               |
 | ------------- | --------------------------------- |
 | Frontend      | http://localhost:3000              |
-| Backend API   | http://localhost:3001              |
-| tRPC endpoint | http://localhost:3001/trpc         |
-| Health Check  | http://localhost:3001/health       |
+| Backend API   | http://localhost:4000              |
+| tRPC endpoint | http://localhost:4000/trpc         |
+| Health Check  | http://localhost:4000/health       |
 | Prisma Studio | Run `pnpm db:studio`              |
 
 ## 7. Prisma Studio
