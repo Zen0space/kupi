@@ -1,0 +1,38 @@
+name: CI Backend
+
+on:
+  push:
+    branches: [dev, main]
+    paths:
+      - "packages/backend/**"
+      - "packages/db/**"
+  pull_request:
+    branches: [dev, main]
+    paths:
+      - "packages/backend/**"
+      - "packages/db/**"
+
+jobs:
+  check:
+    name: Typecheck & Lint
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - run: pnpm db:generate
+
+      - name: Typecheck
+        run: pnpm --filter @kupi/backend typecheck
+
+      - name: Lint
+        run: pnpm --filter @kupi/backend lint
