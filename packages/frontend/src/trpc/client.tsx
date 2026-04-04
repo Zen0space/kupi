@@ -4,8 +4,9 @@ import type { QueryClient } from "@tanstack/react-query";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { createTRPCClient, httpBatchLink } from "@trpc/client";
 import { createTRPCContext } from "@trpc/tanstack-react-query";
-import { useState, useRef, useEffect } from "react";
+import { useState } from "react";
 import { makeQueryClient } from "./query-client";
+import { JotaiProvider } from "@/store";
 import type { AppRouter } from "@kupi/backend/src/trpc/routers/_app";
 
 export const { TRPCProvider, useTRPC } = createTRPCContext<AppRouter>();
@@ -38,14 +39,6 @@ export function TRPCReactProvider({
   getToken: () => Promise<string | undefined>;
 }>) {
   const queryClient = getQueryClient();
-  const tokenRef = useRef<string | undefined>(undefined);
-
-  // Fetch the token via server action on mount
-  useEffect(() => {
-    getToken().then((token) => {
-      tokenRef.current = token;
-    });
-  }, [getToken]);
 
   const [trpcClient] = useState(() =>
     createTRPCClient<AppRouter>({
@@ -53,12 +46,9 @@ export function TRPCReactProvider({
         httpBatchLink({
           url: getUrl(),
           async headers() {
-            // If we don't have a token yet, try fetching it
-            if (!tokenRef.current) {
-              tokenRef.current = await getToken();
-            }
-            if (tokenRef.current) {
-              return { Authorization: `Bearer ${tokenRef.current}` };
+            const token = await getToken();
+            if (token) {
+              return { Authorization: `Bearer ${token}` };
             }
             return {};
           },
@@ -68,10 +58,12 @@ export function TRPCReactProvider({
   );
 
   return (
-    <TRPCProvider trpcClient={trpcClient} queryClient={queryClient}>
-      <QueryClientProvider client={queryClient}>
-        {children}
-      </QueryClientProvider>
-    </TRPCProvider>
+    <QueryClientProvider client={queryClient}>
+      <JotaiProvider queryClient={queryClient}>
+        <TRPCProvider trpcClient={trpcClient} queryClient={queryClient}>
+          {children}
+        </TRPCProvider>
+      </JotaiProvider>
+    </QueryClientProvider>
   );
 }
