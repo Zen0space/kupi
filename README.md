@@ -1,23 +1,36 @@
 # Kupi
 
-A full-stack TypeScript monorepo built with Next.js, Express, tRPC, and Prisma.
+A full-stack TypeScript monorepo built with Next.js, Express, tRPC, Prisma, and Logto authentication.
 
 ## Tech Stack
 
-| Layer    | Package           | Technology                                        |
-| -------- | ----------------- | ------------------------------------------------- |
-| Frontend | `@kupi/frontend`  | Next.js 15, React 19, Tailwind CSS 4, TypeScript  |
-| Backend  | `@kupi/backend`   | Express 4, tRPC v11, Zod, TypeScript              |
-| Database | `@kupi/db`        | Prisma 7, PostgreSQL                              |
-| Infra    | root              | Docker Compose, pnpm workspaces                   |
+| Layer    | Package           | Technology                                              |
+| -------- | ----------------- | ------------------------------------------------------- |
+| Frontend | `@kupi/frontend`  | Next.js 15, React 19, Tailwind CSS 4, Jotai, TypeScript |
+| Backend  | `@kupi/backend`   | Express 4, tRPC v11, Zod, TypeScript                    |
+| Database | `@kupi/db`        | Prisma 7, PostgreSQL 16                                 |
+| Cache    | `@kupi/redis`     | Redis 7, ioredis                                        |
+| Auth     | Logto             | Self-hosted OIDC provider                               |
+| Infra    | root              | Docker Compose, pnpm workspaces                         |
 
 ## Architecture
 
 ```
-Next.js (port 3000) ──tRPC client──▶ Express + tRPC (port 3001) ──Prisma──▶ PostgreSQL (port 5432)
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                              Docker Compose                                  │
+├─────────────────────────────────────────────────────────────────────────────┤
+│  PostgreSQL (5432)  │  Redis (6379)  │  Logto (3001/3002)                   │
+└─────────────────────────────────────────────────────────────────────────────┘
+                              ▲
+                              │
+┌─────────────────────────────┴───────────────────────────────────────────────┐
+│  Next.js (3000)  ──tRPC──▶  Express (4000)  ──Prisma──▶  PostgreSQL         │
+│       │                          │                                           │
+│       └──────── Logto OIDC ──────┘                                           │
+└─────────────────────────────────────────────────────────────────────────────┘
 ```
 
-The frontend communicates with the backend via tRPC, providing end-to-end type safety from database to UI with zero code generation on the client.
+The frontend communicates with the backend via tRPC, providing end-to-end type safety from database to UI. Authentication is handled by Logto via OIDC, with JWT verification on the backend.
 
 ## Project Structure
 
@@ -27,14 +40,16 @@ kupi/
 │   ├── frontend/          # Next.js App Router (port 3000)
 │   │   └── src/
 │   │       ├── app/       # Pages and layouts
+│   │       ├── store/     # Jotai atoms (UI, user state)
 │   │       └── trpc/      # tRPC client and providers
-│   ├── backend/           # Express + tRPC server (port 3001)
+│   ├── backend/           # Express + tRPC server (port 4000)
 │   │   └── src/
 │   │       ├── index.ts   # Express server entry
 │   │       └── trpc/      # tRPC router and procedures
-│   └── db/                # Prisma schema and database client
+│   ├── db/                # Prisma schema and database client
+│   └── redis/             # Redis client factory
 ├── docs/                  # Documentation
-├── docker-compose.yml     # Local PostgreSQL 16
+├── docker-compose.yml     # PostgreSQL, Redis, Logto
 ├── pnpm-workspace.yaml    # Workspace configuration
 └── package.json           # Root scripts
 ```
@@ -57,10 +72,13 @@ cd kupi
 # Install dependencies
 pnpm install
 
-# Copy environment variables
-cp .env.example .env
+# Copy environment variables for each package
+cp packages/backend/.env.example packages/backend/.env
+cp packages/frontend/.env.example packages/frontend/.env
+cp packages/db/.env.example packages/db/.env
+cp packages/redis/.env.example packages/redis/.env
 
-# Start PostgreSQL
+# Start PostgreSQL, Redis, and Logto
 docker compose up -d
 
 # Generate Prisma client
@@ -86,7 +104,7 @@ cd packages/frontend
 pnpm dev
 ```
 
-The frontend will be at `http://localhost:3000` and the backend API at `http://localhost:3001`.
+The frontend will be at `http://localhost:3000` and the backend API at `http://localhost:4000`. Logto admin console is at `http://localhost:3002`.
 
 ## Available Scripts
 
@@ -107,6 +125,24 @@ Run from within each package:
 | ----------------------------------- | ---------------------- |
 | `cd packages/backend && pnpm dev`   | Start backend only     |
 | `cd packages/frontend && pnpm dev`  | Start frontend only    |
+
+## State Management
+
+The frontend uses [Jotai](https://jotai.org/) for state management with `jotai-tanstack-query` for server state integration.
+
+```
+packages/frontend/src/store/
+├── index.tsx          # JotaiProvider with QueryClient
+└── atoms/
+    ├── index.ts       # Barrel exports
+    ├── ui.ts          # UI state (sidebar, theme, modals, toasts)
+    └── user.ts        # User sync state with sessionStorage persistence
+```
+
+Key patterns:
+- UI state is managed with simple atoms
+- Server state uses `jotai-tanstack-query` for tRPC integration
+- User state persists to `sessionStorage` for navigation resilience
 
 ## Documentation
 

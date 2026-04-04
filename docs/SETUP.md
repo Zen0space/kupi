@@ -37,62 +37,94 @@ If you're contributing, fork the repo first and clone your fork instead.
 pnpm install
 ```
 
-This installs dependencies for all workspace packages (`frontend`, `backend`, `db`).
+This installs dependencies for all workspace packages (`frontend`, `backend`, `db`, `redis`).
 
 ## 3. Environment Variables
 
-Copy the example environment file:
+Each package has its own `.env` file. Copy the examples:
 
 ```bash
-cp .env.example .env
+cp packages/backend/.env.example packages/backend/.env
+cp packages/frontend/.env.example packages/frontend/.env
+cp packages/db/.env.example packages/db/.env
+cp packages/redis/.env.example packages/redis/.env
 ```
 
-The default `.env` contains:
+### What each `.env` contains
 
+**`packages/backend/.env`** — used by the Express server at runtime:
 ```
 DATABASE_URL=postgres://kupi:kupi@localhost:5432/kupi
-NEXT_PUBLIC_BACKEND_URL=http://localhost:3001
+PORT=4000
+LOGTO_JWKS_URL=http://localhost:3001/oidc/jwks
 ```
 
-These match the Docker Compose and default backend configuration. No changes needed for local development.
+**`packages/frontend/.env`** — used by Next.js (`NEXT_PUBLIC_` vars are exposed to the browser):
+```
+NEXT_PUBLIC_BACKEND_URL=http://localhost:4000
+LOGTO_ENDPOINT=http://localhost:3001
+LOGTO_APP_ID=<your-app-id>
+LOGTO_APP_SECRET=<your-app-secret>
+```
 
-## 4. Start PostgreSQL
+**`packages/db/.env`** — used by Prisma CLI for migrations and code generation:
+```
+DATABASE_URL=postgres://kupi:kupi@localhost:5432/kupi
+```
 
-Start the database using Docker Compose:
+**`packages/redis/.env`** — used by the Redis client:
+```
+REDIS_URL=redis://localhost:6379
+```
+
+The defaults match the Docker Compose configuration. You'll need to configure Logto credentials after setup.
+
+## 4. Start Infrastructure Services
+
+Start the database, cache, and auth services using Docker Compose:
 
 ```bash
 docker compose up -d
 ```
 
-This runs PostgreSQL 16 (Alpine) on port `5432` with:
+This runs:
 
-| Setting  | Value |
-| -------- | ----- |
-| User     | kupi  |
-| Password | kupi  |
-| Database | kupi  |
+| Service    | Port(s)     | Description                           |
+| ---------- | ----------- | ------------------------------------- |
+| PostgreSQL | 5432        | Main database (user: kupi, pass: kupi)|
+| Redis      | 6379        | Cache and pub/sub                     |
+| Logto      | 3001, 3002  | OIDC auth (3001=API, 3002=Admin)      |
 
-### Verify the database is running
+### Verify services are running
 
 ```bash
 docker compose ps
 ```
 
-You should see the `postgres` service with status `Up`.
+You should see all services with status `Up` (healthy).
 
-### Stop the database
+### Stop services
 
 ```bash
 docker compose down
 ```
 
-To also remove the stored data:
+To also remove stored data:
 
 ```bash
 docker compose down -v
 ```
 
-## 5. Set Up the Database
+## 5. Configure Logto
+
+1. Open the Logto admin console at `http://localhost:3002`
+2. Create a new application (Traditional Web)
+3. Copy the App ID and App Secret to `packages/frontend/.env`
+4. Set the redirect URIs:
+   - Sign-in: `http://localhost:3000/callback`
+   - Sign-out: `http://localhost:3000`
+
+## 6. Set Up the Database
 
 Generate the Prisma client:
 
@@ -112,7 +144,7 @@ Alternatively, push the schema directly without creating a migration file:
 pnpm db:push
 ```
 
-## 6. Start Development Servers
+## 7. Start Development Servers
 
 The recommended approach is to run each service in its own terminal for clear, isolated logs:
 
@@ -136,13 +168,15 @@ This makes it easy to see logs from each service separately and restart one with
 
 | Service       | URL                               |
 | ------------- | --------------------------------- |
-| Frontend      | http://localhost:3000              |
-| Backend API   | http://localhost:3001              |
-| tRPC endpoint | http://localhost:3001/trpc         |
-| Health Check  | http://localhost:3001/health       |
+| Frontend      | http://localhost:3000             |
+| Backend API   | http://localhost:4000             |
+| tRPC endpoint | http://localhost:4000/trpc        |
+| Health Check  | http://localhost:4000/health      |
+| Logto API     | http://localhost:3001             |
+| Logto Admin   | http://localhost:3002             |
 | Prisma Studio | Run `pnpm db:studio`              |
 
-## 7. Prisma Studio
+## 8. Prisma Studio
 
 To visually browse and edit your database:
 
@@ -195,11 +229,24 @@ Ensure PostgreSQL is running:
 docker compose ps
 ```
 
-Verify `DATABASE_URL` in your `.env` matches the Docker Compose credentials.
+Verify `DATABASE_URL` in `packages/backend/.env` and `packages/db/.env` matches the Docker Compose credentials.
 
 ### tRPC connection errors in the frontend
 
-Make sure the backend is running before the frontend tries to fetch data. Verify `NEXT_PUBLIC_BACKEND_URL` in your `.env` points to the correct backend URL (`http://localhost:3001`).
+Make sure the backend is running before the frontend tries to fetch data. Verify `NEXT_PUBLIC_BACKEND_URL` in `packages/frontend/.env` points to the correct backend URL (`http://localhost:4000`).
+
+### Logto connection errors
+
+Ensure Logto is running (`docker compose ps`) and the credentials in `packages/frontend/.env` are correct. Check that redirect URIs match exactly.
+
+### Redis connection errors
+
+Verify Redis is running:
+
+```bash
+docker compose ps redis
+redis-cli ping  # Should return PONG
+```
 
 ### Fresh start
 

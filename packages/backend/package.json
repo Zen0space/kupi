@@ -4,20 +4,26 @@
   "main": "./src/index.ts",
   "types": "./src/trpc/routers/_app.ts",
   "scripts": {
-    "dev": "tsx watch --env-file=../../.env src/index.ts"
+    "dev": "tsx watch --env-file=.env src/index.ts",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint src/"
   },
   "dependencies": {
     "@kupi/db": "workspace:*",
     "@trpc/server": "^11.16.0",
     "cors": "^2.8.6",
     "express": "^4.21.0",
+    "jose": "^6.2.2",
     "zod": "^4.3.6"
   },
   "devDependencies": {
+    "@eslint/js": "^10.0.1",
     "@types/cors": "^2.8.0",
     "@types/express": "^5.0.0",
     "@types/node": "^22.0.0",
+    "eslint": "^10.1.0",
     "tsx": "^4.19.0",
-    "typescript": "^5.6.0"
+    "typescript": "^5.6.0",
+    "typescript-eslint": "^8.58.0"
   }
 }

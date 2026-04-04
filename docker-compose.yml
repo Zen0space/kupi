@@ -10,6 +10,42 @@ services:
       POSTGRES_DB: kupi
     volumes:
       - pgdata:/var/lib/postgresql/data
+      - ./packages/db/init-logto.sql:/docker-entrypoint-initdb.d/init-logto.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redisdata:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  logto:
+    image: svhd/logto:latest
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - "3001:3001"
+      - "3002:3002"
+    environment:
+      - TRUST_PROXY_HEADER=1
+      - DB_URL=postgres://kupi:kupi@postgres:5432/logto
+      - ENDPOINT=http://localhost:3001
+      - ADMIN_ENDPOINT=http://localhost:3002
+    entrypoint: ["sh", "-c", "npm run cli db seed -- --swe && npm start"]
 
 volumes:
   pgdata:
+  redisdata:

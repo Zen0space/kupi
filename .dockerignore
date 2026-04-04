@@ -34,8 +34,9 @@ packages/db/src/generated
 # TypeScript
 *.tsbuildinfo
 
-# Vite
-packages/frontend/.vite
+# Next.js
+.next
+out
 
 # Testing
 coverage
