@@ -94,28 +94,32 @@ chore: upgrade Prisma to v7.7
 ```
 kupi/
 ├── packages/
-│   ├── frontend/      # @kupi/frontend — Next.js 15 + tRPC client
+│   ├── frontend/      # @kupi/frontend — Next.js 15 + tRPC client + Jotai
 │   │   └── src/
 │   │       ├── app/   # Pages, layouts, and route groups
+│   │       ├── store/ # Jotai atoms (UI, user state)
 │   │       └── trpc/  # tRPC client, providers, query client
 │   ├── backend/       # @kupi/backend  — Express + tRPC server
 │   │   └── src/
 │   │       ├── index.ts
 │   │       └── trpc/  # Router, procedures, context
-│   └── db/            # @kupi/db       — Prisma + PostgreSQL
+│   ├── db/            # @kupi/db       — Prisma + PostgreSQL
+│   └── redis/         # @kupi/redis    — Redis client factory
 ├── docs/              # Documentation
-└── docker-compose.yml # Local infrastructure
+└── docker-compose.yml # PostgreSQL, Redis, Logto
 ```
 
 ### Where to make changes
 
 - **UI components and pages** — `packages/frontend/src/app/`
+- **Client state (Jotai atoms)** — `packages/frontend/src/store/atoms/`
 - **tRPC client wiring** — `packages/frontend/src/trpc/`
 - **API procedures (tRPC)** — `packages/backend/src/trpc/routers/`
 - **tRPC context and middleware** — `packages/backend/src/trpc/init.ts`
 - **Express server and middleware** — `packages/backend/src/index.ts`
 - **Database schema and models** — `packages/db/prisma/schema.prisma`
 - **Shared database client** — `packages/db/src/`
+- **Redis client** — `packages/redis/src/`
 
 ## Adding a tRPC Procedure
 
@@ -150,6 +154,44 @@ When modifying the Prisma schema:
 
 Never edit generated files in `packages/db/src/generated/`.
 
+## State Management (Jotai)
+
+The frontend uses [Jotai](https://jotai.org/) for state management. Follow these patterns:
+
+### Adding a new atom
+
+1. Create or edit a file in `packages/frontend/src/store/atoms/`
+2. Export from `packages/frontend/src/store/atoms/index.ts`
+3. Use the atom in components via `useAtom`, `useAtomValue`, or `useSetAtom`
+
+```ts
+// packages/frontend/src/store/atoms/example.ts
+import { atom } from "jotai";
+
+export const countAtom = atom(0);
+
+export const doubledCountAtom = atom((get) => get(countAtom) * 2);
+```
+
+### Persisted atoms
+
+Use `atomWithStorage` with `createJSONStorage` for persistence:
+
+```ts
+import { atomWithStorage, createJSONStorage } from "jotai/utils";
+
+const storage = createJSONStorage(() => sessionStorage);
+
+export const userPrefsAtom = atomWithStorage("prefs", defaultValue, storage);
+```
+
+### Guidelines
+
+- **Don't use `useEffect` for state sync** — use derived atoms or write atoms instead
+- **Keep atoms small and focused** — one concern per atom
+- **Use derived atoms** for computed values
+- **Persist sparingly** — only persist what needs to survive navigation
+
 ## Adding Dependencies
 
 Use pnpm workspace filters or `cd` into the package directly:
@@ -158,6 +200,7 @@ Use pnpm workspace filters or `cd` into the package directly:
 # Using filter from root
 pnpm --filter @kupi/frontend add <package>
 pnpm --filter @kupi/backend add <package>
+pnpm --filter @kupi/redis add <package>
 pnpm --filter @kupi/backend add -D <package>
 
 # Or cd into the package
@@ -166,6 +209,28 @@ cd packages/backend && pnpm add -D <package>
 ```
 
 Do not install dependencies at the root level unless they are shared tooling.
+
+## Type Checking and Linting
+
+Before committing, run type and lint checks that match CI:
+
+```bash
+# Generate Prisma types (required before typecheck)
+pnpm db:generate
+
+# Frontend
+pnpm --filter @kupi/frontend typecheck
+pnpm --filter @kupi/frontend lint
+
+# Backend
+pnpm --filter @kupi/backend typecheck
+pnpm --filter @kupi/backend lint
+```
+
+Common issues:
+- **JSX in `.ts` files** — rename to `.tsx`
+- **Missing Prisma types** — run `pnpm db:generate`
+- **Unused variables** — remove or prefix with `_`
 
 ## Questions?
 
