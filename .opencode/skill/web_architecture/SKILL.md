@@ -1,5 +1,5 @@
 ---
-name: web
+name: web_architecture
 description: Frontend architecture specialist for @kupi/frontend — React 19, Next.js 15, Jotai state management, TypeScript best practices
 ---
 
