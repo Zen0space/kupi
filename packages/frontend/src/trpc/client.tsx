@@ -6,6 +6,7 @@ import { createTRPCClient, httpBatchLink } from "@trpc/client";
 import { createTRPCContext } from "@trpc/tanstack-react-query";
 import { useState } from "react";
 import { makeQueryClient } from "./query-client";
+import { JotaiProvider } from "@/store";
 import type { AppRouter } from "@kupi/backend/src/trpc/routers/_app";
 
 export const { TRPCProvider, useTRPC } = createTRPCContext<AppRouter>();
@@ -57,10 +58,12 @@ export function TRPCReactProvider({
   );
 
   return (
-    <TRPCProvider trpcClient={trpcClient} queryClient={queryClient}>
-      <QueryClientProvider client={queryClient}>
-        {children}
-      </QueryClientProvider>
-    </TRPCProvider>
+    <QueryClientProvider client={queryClient}>
+      <JotaiProvider queryClient={queryClient}>
+        <TRPCProvider trpcClient={trpcClient} queryClient={queryClient}>
+          {children}
+        </TRPCProvider>
+      </JotaiProvider>
+    </QueryClientProvider>
   );
 }
