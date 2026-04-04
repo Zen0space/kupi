@@ -1,5 +1,5 @@
 import { atom } from "jotai";
-import { atomWithStorage } from "jotai/utils";
+import { atomWithStorage, createJSONStorage } from "jotai/utils";
 
 // ============================================================================
 // Types
@@ -30,12 +30,17 @@ export type UserSyncStatus =
 // Storage helper for SSR safety
 // ============================================================================
 
-const getSessionStorage = () => {
+const sessionStorageWrapper = createJSONStorage<unknown>(() => {
   if (typeof window !== "undefined") {
     return sessionStorage;
   }
-  return undefined;
-};
+  // Return a no-op storage for SSR
+  return {
+    getItem: () => null,
+    setItem: () => {},
+    removeItem: () => {},
+  };
+});
 
 // ============================================================================
 // Atoms
@@ -48,7 +53,7 @@ const getSessionStorage = () => {
 export const userInfoAtom = atomWithStorage<UserInfo | null>(
   "kupi-user-info",
   null,
-  getSessionStorage(),
+  sessionStorageWrapper as ReturnType<typeof createJSONStorage<UserInfo | null>>,
   { getOnInit: true }
 );
 
@@ -59,7 +64,7 @@ export const userInfoAtom = atomWithStorage<UserInfo | null>(
 export const userSyncStatusAtom = atomWithStorage<UserSyncStatus>(
   "kupi-user-sync-status",
   { state: "idle" },
-  getSessionStorage(),
+  sessionStorageWrapper as ReturnType<typeof createJSONStorage<UserSyncStatus>>,
   { getOnInit: true }
 );
 
