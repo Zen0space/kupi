@@ -278,7 +278,31 @@ function MaterialIcon({
   }
 }
 
-export default function LandingPage() {
+import type { ReactNode } from "react";
+import SignIn from "./sign-in";
+import SignOut from "./sign-out";
+
+type LandingPageProps = {
+  isAuthenticated: boolean;
+  userClaims?: {
+    sub: string;
+    name?: string;
+    username?: string;
+    picture?: string;
+    email?: string;
+  };
+  signInAction: () => Promise<void>;
+  signOutAction: () => Promise<void>;
+  userSync: ReactNode;
+};
+
+export default function LandingPage({
+  isAuthenticated,
+  userClaims,
+  signInAction,
+  signOutAction,
+  userSync,
+}: LandingPageProps) {
   return (
     <main className="min-h-[max(884px,100dvh)] bg-[#fff8f3] text-[#1f1b14] antialiased">
       <header className="fixed top-0 z-50 w-full bg-[#fff8f3]/70 backdrop-blur-xl transition-all duration-300 dark:bg-[#33210d]/70">
@@ -302,12 +326,17 @@ export default function LandingPage() {
             </a>
           </nav>
 
-          <a
-            className="rounded-full bg-[#33210d] px-6 py-2.5 font-semibold text-[#ffffff] transition-all duration-300 hover:opacity-80 active:scale-95"
-            href="#get-started"
-          >
-            Get Started
-          </a>
+          {isAuthenticated ? (
+            <div className="flex items-center gap-3">
+              {userSync}
+              <p className="text-sm text-[#33210d]">
+                {userClaims?.name ?? userClaims?.username ?? userClaims?.email ?? "User"}
+              </p>
+              <SignOut onSignOut={signOutAction} />
+            </div>
+          ) : (
+            <SignIn onSignIn={signInAction} />
+          )}
         </div>
       </header>
 
@@ -453,9 +482,20 @@ export default function LandingPage() {
                 entry is waiting.
               </p>
               <div className="flex flex-col justify-center gap-6 pt-4 sm:flex-row">
-                <button className="rounded-full bg-[#fff8f3] px-10 py-4 text-lg font-bold text-[#33210d] transition-all hover:opacity-90 active:scale-95">
-                  Get Kupi Free
-                </button>
+                {isAuthenticated ? (
+                  <span className="rounded-full bg-[#fff8f3] px-10 py-4 text-lg font-bold text-[#33210d]">
+                    Welcome back, {userClaims?.name ?? userClaims?.username ?? "Explorer"}!
+                  </span>
+                ) : (
+                  <form action={signInAction}>
+                    <button
+                      type="submit"
+                      className="rounded-full bg-[#fff8f3] px-10 py-4 text-lg font-bold text-[#33210d] transition-all hover:opacity-90 active:scale-95"
+                    >
+                      Get Kupi Free
+                    </button>
+                  </form>
+                )}
                 <button className="rounded-full border border-[#cb9b6c] px-10 py-4 text-lg font-bold text-[#ffffff] transition-all hover:bg-[#ffffff]/10">
                   Learn More
                 </button>
